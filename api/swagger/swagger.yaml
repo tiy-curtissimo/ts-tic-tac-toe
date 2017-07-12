@@ -1,0 +1,177 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: Tic-Tac-Toe Server
+# during dev, should point to your local machine
+host: localhost:10010
+# basePath prefixes all resource paths 
+basePath: /
+# 
+schemes:
+  # tip: remove http to make production-grade
+  - http
+  - https
+# format of bodies a client can send (Content-Type)
+consumes:
+  - application/json
+# format of the responses to the client (Accepts)
+produces:
+  - application/json
+paths:
+  /games:
+    # binds a127 app logic to a route
+    x-swagger-router-controller: GamesController
+    get:
+      description: Returns a list of tic-tac-toe games
+      # used as the method name of the controller
+      operationId: list
+      responses:
+        "200":
+          description: Successfully retrieve a list of tic-tac-toe games
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/TicTacToeGame"
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            # a pointer to a definition
+            $ref: "#/definitions/ErrorResponse"
+    post:
+      description: Create a new tic-tac-toe game
+      operationId: create
+      parameters:
+        - name: newGameRequest
+          in: body
+          description: A valid request to create a new game
+          required: true
+          schema:
+            $ref: "#/definitions/NewGameRequest"
+      responses:
+        "201":
+          description: "Successfully created a new game"
+          schema:
+            $ref: "#/definitions/TicTacToeGame"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /games/{id}:
+    x-swagger-router-controller: GamesController
+    get:
+      description: Get the game with the specified id
+      operationId: getById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: The game found for the id
+          schema:
+            $ref: "#/definitions/TicTacToeGame"
+        "404":
+          description: Game not found
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    patch:
+      description: Make a move on the board
+      operationId: placeHumanMove
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+        - name: instruction
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/MoveInstruction"
+      responses:
+        "200":
+          description: The updated game
+          schema:
+            $ref: "#/definitions/TicTacToeGame"
+        "404":
+          description: Game not found
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    delete:
+      description: Remove a game from the server
+      operationId: destroy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: The server removed the game
+        "404":
+          description: Game not found
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /swagger:
+    x-swagger-pipe: swagger_raw
+# complex objects have schema definitions
+definitions:
+  NewGameRequest:
+    required:
+      - humanMovesFirst
+    properties:
+      humanMovesFirst:
+        type: boolean
+  MoveInstruction:
+    required:
+      - columnIndex
+      - rowIndex
+    properties:
+      columnIndex:
+        type: integer
+        minimum: 0
+        maximum: 2
+      rowIndex:
+        type: integer
+        minimum: 0
+        maximum: 2
+  TicTacToeGame:
+    required:
+      - humanMovesFirst
+      - board
+      - id
+    properties:
+      id:
+        type: number
+      winner:
+        type: integer
+        minimum: 0
+        maximum: 2
+      humanMovesFirst:
+        type: boolean
+      board:
+        type: array
+        minItems: 3
+        maxItems: 3
+        items:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            type: integer
+            minimum: 0
+            maximum: 2
+  ErrorResponse:
+    required:
+      - message
+    properties:
+      message:
+        type: string
